@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuerzas y Movimiento - Rampa (PhET Interactive Physics)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f3f4f6;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Cabecera Estilo PhET */
+        .phet-header {
+            background-color: #3b5b9e;
+            color: white;
+            padding: 6px 12px;
+            font-size: 14px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #1e3a8a;
+            flex-shrink: 0;
+        }
+        
+        .phet-tabs {
+            background-color: #e5e7eb;
+            display: flex;
+            border-bottom: 2px solid #9ca3af;
+            padding-top: 4px;
+            padding-left: 8px;
+            flex-shrink: 0;
+        }
+        
+        .phet-tab {
+            padding: 8px 24px;
+            background: #9fb7e8;
+            border: 1px solid #7a9ce0;
+            border-bottom: none;
+            margin-right: 6px;
+            border-radius: 6px 6px 0 0;
+            font-weight: bold;
+            color: #1e293b;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            font-size: 14px;
+        }
+        .phet-tab:hover {
+            background: #b4c8f0;
+        }
+        .phet-tab.active {
+            background: #ffffff;
+            border-top: 3px solid #2563eb;
+            color: #1d4ed8;
+        }
+
+        /* Layout de la Aplicación */
+        .app-view {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .view-hidden {
+            display: none !important;
+        }
+
+        /* Vista de Simulación (Fricción / Gráficos) */
+        .sim-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto; /* Permite scroll cuando el contenido supera la altura */
+            background-color: #e2e8f0;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 420px;
+            min-height: 380px;
+            background: linear-gradient(to bottom, #dbeafe 0%, #e0f2fe 60%, #bbf7d0 60%, #86efac 100%);
+            border-bottom: 2px solid #9ca3af;
+            flex-shrink: 0;
+        }
+
+        canvas.sim-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Panel de Gráficos de Fuerza */
+        .graph-section {
+            background-color: #ffffff;
+            padding: 12px;
+            border-bottom: 2px solid #cbd5e1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            min-height: 320px;
+            flex-shrink: 0;
+        }
+
+        .graph-controls {
+            flex: 1;
+            min-width: 220px;
+            max-width: 280px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .graph-canvas-container {
+            flex: 3;
+            min-width: 320px;
+            height: 280px;
+            position: relative;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 8px;
+        }
+
+        /* Barra de Reproducción Playback */
+        .playback-bar {
+            background: #f1f5f9;
+            padding: 10px 16px;
+            border-top: 1px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        .play-btn {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            font-size: 18px;
+            border: 3px solid #93c5fd;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s, background 0.2s;
+        }
+        .play-btn:hover { transform: scale(1.05); }
+        .play-btn:active { transform: scale(0.95); }
+        .play-btn.paused {
+            background: radial-gradient(circle, #eab308 0%, #a16207 100%);
+            border-color: #fde047;
+        }
+
+        .step-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 1px solid #94a3b8;
+            color: #334155;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .step-btn:hover { background: #f8fafc; }
+
+        /* Panel Lateral Derecho de Controles */
+        .right-panel {
+            width: 320px;
+            background: #f8fafc;
+            border-left: 2px solid #cbd5e1;
+            overflow-y: auto;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .panel-box {
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .panel-title {
+            background: #e2e8f0;
+            padding: 6px 10px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #334155;
+            border-bottom: 1px solid #cbd5e1;
+        }
+
+        .panel-content {
+            padding: 10px;
+            font-size: 12px;
+        }
+
+        .control-row {
+            margin-bottom: 10px;
+        }
+        .control-row label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .val-badge {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #0f172a;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Panel Matemático Dinámico */
+        .math-dashboard {
+            font-family: 'Courier New', Courier, monospace;
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            line-height: 1.5;
+        }
+        .math-dashboard .highlight-alert {
+            color: #f87171;
+            font-weight: bold;
+        }
+        .math-dashboard .highlight-ok {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        /* Vista Introducción */
+        .intro-wrapper {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px 32px;
+            background-color: #ffffff;
+            color: #1e293b;
+        }
+        .intro-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid #2563eb;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+        }
+
+        /* --- Estilos Pestaña Retos (Quiz) --- */
+        .reto-card {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-left: 5px solid #8b5cf6; /* Morado para diferenciar */
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .reto-title { font-weight: bold; color: #4c1d95; margin-bottom: 8px; }
+        .reto-input { border: 1px solid #94a3b8; border-radius: 4px; padding: 4px 8px; width: 120px; margin-right: 8px; outline: none; }
+        .reto-input:focus { border-color: #8b5cf6; box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2); }
+        .btn-check { background: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer; border: none; transition: 0.2s; }
+        .btn-check:hover { background: #2563eb; }
+        .btn-res { background: #e2e8f0; color: #475569; padding: 6px 12px; border-radius: 4px; font-size: 13px; cursor: pointer; border: 1px solid #cbd5e1; margin-left: 8px; transition: 0.2s; }
+        .btn-res:hover { background: #cbd5e1; }
+        .reto-feedback { display: inline-block; margin-left: 12px; font-weight: bold; font-size: 14px; }
+        .feedback-ok { color: #16a34a; }
+        .feedback-err { color: #dc2626; }
+        .reto-resolution { background: #f8fafc; border: 1px dashed #94a3b8; border-radius: 6px; padding: 12px; margin-top: 12px; font-family: monospace; font-size: 13px; color: #334155; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+    <!-- Cabecera PhET -->
+    <div class="phet-header">
+        <span><i class="fa-solid fa-atom mr-2"></i>Rampa: Fuerzas, Fricción y Movimiento (Segunda Ley de Newton)</span>
+        <span class="text-xs bg-blue-900 px-2 py-1 rounded">PhET Interactive Physics Simulation</span>
+    </div>
+
+    <!-- Pestañas Superiores -->
+    <div class="phet-tabs" id="main-tabs">
+        <div class="phet-tab active" data-tab="intro">Introducción</div>
+        <div class="phet-tab" data-tab="friccion">Fricción</div>
+        <div class="phet-tab" data-tab="graficos">Gráficos de Fuerza</div>
+        <div class="phet-tab" data-tab="retos">Retos (Quiz)</div>
+    </div>
+
+    <!-- Vista 1: INTRODUCCIÓN -->
+    <div id="view-intro" class="intro-wrapper">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-extrabold text-blue-900 mb-4 border-b-2 border-blue-200 pb-2">
+                Objetivo de la Simulación
+            </h1>
+            <p class="text-gray-700 leading-relaxed mb-6 text-base">
+                Esta simulación didáctica permite investigar de forma cuantitativa y visual la <strong>Segunda Ley de Newton</strong> (&Sigma;F = m &middot; a) y el comportamiento dinámico del <strong>rozamiento estático y cinético</strong> sobre superficies planas e inclinadas. El estudiante podrá determinar con precisión la fuerza requerida para superar el umbral de fricción estática e iniciar el movimiento acelerado de objetos con diferentes masas.
+            </p>
+
+            <h2 class="text-2xl font-bold text-blue-800 mb-4 border-b-2 border-blue-200 pb-2">
+                Marco Teórico y Formulación Matemática
+            </h2>
+
+            <div class="grid md:grid-cols-2 gap-4 mb-6">
+                <div class="intro-card">
+                    <h3 class="font-bold text-blue-900 mb-2 uppercase text-xs tracking-wider">1. Fuerza Normal y Gravedad</h3>
+                    <p class="text-sm text-gray-700 mb-2">En una rampa con ángulo &theta;, el peso (F<sub>g</sub> = m&middot;g) se descompone en dos ejes ortogonales:</p>
+                    <ul class="list-disc list-inside text-sm font-mono text-blue-950 space-y-1">
+                        <li>F<sub>g,&perp;</sub> = m &middot; g &middot; cos(&theta;)</li>
+                        <li>F<sub>g,&parallel;</sub> = m &middot; g &middot; sin(&theta;)</li>
+                        <li>Fuerza Normal: F<sub>N</sub> = m &middot; g &middot; cos(&theta;)</li>
+                    </ul>
+                </div>
+
+                <div class="intro-card">
+                    <h3 class="font-bold text-blue-900 mb-2 uppercase text-xs tracking-wider">2. Leyes de Rozamiento</h3>
+                    <p class="text-sm text-gray-700 mb-2">La fuerza de fricción depende del estado de movimiento del objeto:</p>
+                    <ul class="list-disc list-inside text-sm font-mono text-blue-950 space-y-1">
+                        <li>Fricción Estática Máx: f<sub>s,max</sub> = &mu;<sub>s</sub> &middot; F<sub>N</sub></li>
+                        <li>Fricción Cinética: f<sub>k</sub> = &mu;<sub>k</sub> &middot; F<sub>N</sub></li>
+                        <li>Transición: Si |F<sub>impulso</sub>| &gt; f<sub>s,max</sub> el cuerpo rompe el reposo.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="intro-card border-left-5 border-emerald-600 bg-emerald-50/50">
+                <h3 class="font-bold text-emerald-900 mb-2 uppercase text-xs tracking-wider">3. Segunda Ley de Newton y Aceleración Neta</h3>
+                <p class="text-sm text-gray-800 mb-2">
+                    La suma de todas las fuerzas paralelas sobre la superficie determina el estado de movimiento:
+                </p>
+                <div class="font-mono text-center text-lg text-emerald-950 font-bold my-2 bg-white p-2 rounded border border-emerald-200">
+                    &Sigma;F = F<sub>aplicada</sub> - F<sub>g,&parallel;</sub> - f<sub>fricción</sub> = m &middot; a
+                </div>
+                <p class="text-xs text-gray-600">
+                    Ajustando la masa, el ángulo y los coeficientes de fricción (&mu;<sub>s</sub>, &mu;<sub>k</sub>), es posible verificar cuantitativamente que la aceleración alcanzada es directamente proporcional a la fuerza neta aplicada.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vista: RETOS (QUIZ) -->
+    <div id="view-retos" class="intro-wrapper view-hidden">
+        <div class="max-w-4xl mx-auto">
+            <h1 class="text-3xl font-extrabold text-purple-900 mb-4 border-b-2 border-purple-200 pb-2">
+                Retos Prácticos de Dinámica
+            </h1>
+            <p class="text-gray-700 mb-6">Pon a prueba tus conocimientos calculando los resultados analíticamente. Puedes usar el simulador para comprobar visualmente. (Asume <strong>g = 9.81 m/s&sup2;</strong>). Margen de error de &plusmn;0.1 permitido.</p>
+
+            <!-- Reto 1 -->
+            <div class="reto-card">
+                <div class="reto-title"><i class="fa-solid fa-cube mr-2"></i>Reto 1: Umbral de Fricción Estática</div>
+                <p class="text-sm mb-3">Una caja de <strong>50 kg</strong> está sobre una superficie horizontal plana (&theta; = 0&deg;). El coeficiente de fricción estática es <strong>&mu;<sub>s</sub> = 0.40</strong>. ¿Cuál es la fuerza mínima requerida para lograr que la caja se empiece a mover?</p>
+                <div class="flex items-center flex-wrap gap-y-2 mb-2">
+                    <input type="number" id="reto1-input" class="reto-input" step="0.1" placeholder="Fuerza (N)">
+                    <button class="btn-check" onclick="checkReto(1, 196.2)">Verificar</button>
+                    <button class="btn-res" onclick="toggleRes(1)">Ver Resolución</button>
+                    <span id="reto1-fb" class="reto-feedback"></span>
+                </div>
+                <div id="reto1-res" class="reto-resolution view-hidden">
+                    1. Calcular Fuerza Normal (en plano horizontal): F<sub>N</sub> = m &middot; g = 50 &middot; 9.81 = 490.5 N<br>
+                    2. Fuerza de fricción estática máxima: F<sub>s,max</sub> = &mu;<sub>s</sub> &middot; F<sub>N</sub><br>
+                    3. Sustituyendo: F<sub>s,max</sub> = 0.40 &middot; 490.5 = <strong>196.2 N</strong>
+                </div>
+            </div>
+
+            <!-- Reto 2 -->
+            <div class="reto-card">
+                <div class="reto-title"><i class="fa-solid fa-forward-fast mr-2"></i>Reto 2: Aceleración en Plano Horizontal</div>
+                <p class="text-sm mb-3">Una caja de <strong>100 kg</strong> se encuentra en una superficie horizontal. Se le aplica una fuerza constante de <strong>500 N</strong>. Si el coeficiente de fricción cinética es <strong>&mu;<sub>k</sub> = 0.30</strong>, ¿cuál es la aceleración de la caja en m/s&sup2;?</p>
+                <div class="flex items-center flex-wrap gap-y-2 mb-2">
+                    <input type="number" id="reto2-input" class="reto-input" step="0.01" placeholder="a (m/s²)">
+                    <button class="btn-check" onclick="checkReto(2, 2.06)">Verificar</button>
+                    <button class="btn-res" onclick="toggleRes(2)">Ver Resolución</button>
+                    <span id="reto2-fb" class="reto-feedback"></span>
+                </div>
+                <div id="reto2-res" class="reto-resolution view-hidden">
+                    1. F<sub>N</sub> = 100 &middot; 9.81 = 981.0 N<br>
+                    2. Fricción cinética: F<sub>k</sub> = &mu;<sub>k</sub> &middot; F<sub>N</sub> = 0.30 &middot; 981 = 294.3 N<br>
+                    3. Fuerza neta: &Sigma;F = F<sub>aplicada</sub> - F<sub>k</sub> = 500 - 294.3 = 205.7 N<br>
+                    4. Aceleración: a = &Sigma;F / m = 205.7 / 100 = <strong>2.057 m/s&sup2;</strong> (aprox. 2.06)
+                </div>
+            </div>
+
+            <!-- Reto 3 -->
+            <div class="reto-card">
+                <div class="reto-title"><i class="fa-solid fa-arrow-down mr-2"></i>Reto 3: Componente Paralela del Peso</div>
+                <p class="text-sm mb-3">Una caja de <strong>10 kg</strong> está sobre una rampa inclinada a <strong>30&deg;</strong>. Para simplificar, asume que NO hay fricción. ¿Cuál es la magnitud de la fuerza gravitacional paralela (F<sub>g,&parallel;</sub>) a la rampa que tira de la caja hacia abajo?</p>
+                <div class="flex items-center flex-wrap gap-y-2 mb-2">
+                    <input type="number" id="reto3-input" class="reto-input" step="0.1" placeholder="F (N)">
+                    <button class="btn-check" onclick="checkReto(3, 49.1)">Verificar</button>
+                    <button class="btn-res" onclick="toggleRes(3)">Ver Resolución</button>
+                    <span id="reto3-fb" class="reto-feedback"></span>
+                </div>
+                <div id="reto3-res" class="reto-resolution view-hidden">
+                    1. Fórmula componente paralela: F<sub>g,&parallel;</sub> = m &middot; g &middot; sin(&theta;)<br>
+                    2. Sustitución: F<sub>g,&parallel;</sub> = 10 &middot; 9.81 &middot; sin(30&deg;)<br>
+                    3. Sabiendo que sin(30&deg;) = 0.5 &rarr; F<sub>g,&parallel;</sub> = 98.1 &middot; 0.5 = <strong>49.05 N</strong> (aprox. 49.1)
+                </div>
+            </div>
+
+            <!-- Reto 4 -->
+            <div class="reto-card">
+                <div class="reto-title"><i class="fa-solid fa-hand mr-2"></i>Reto 4: Vencer el Reposo en Rampa</div>
+                <p class="text-sm mb-3">Un cajón de <strong>20 kg</strong> está en reposo sobre una rampa a <strong>45&deg;</strong> con &mu;<sub>s</sub> = <strong>0.50</strong>. ¿Qué fuerza (en N) dirigida <em>hacia arriba de la rampa</em> se requiere aplicar para iniciar el movimiento hacia arriba? (Nota: se debe contrarrestar tanto el peso paralelo como la fricción estática).</p>
+                <div class="flex items-center flex-wrap gap-y-2 mb-2">
+                    <input type="number" id="reto4-input" class="reto-input" step="0.1" placeholder="F (N)">
+                    <button class="btn-check" onclick="checkReto(4, 208.1)">Verificar</button>
+                    <button class="btn-res" onclick="toggleRes(4)">Ver Resolución</button>
+                    <span id="reto4-fb" class="reto-feedback"></span>
+                </div>
+                <div id="reto4-res" class="reto-resolution view-hidden">
+                    1. Peso paralelo: F<sub>g,&parallel;</sub> = 20 &middot; 9.81 &middot; sin(45&deg;) = 138.73 N (apunta hacia abajo)<br>
+                    2. Fuerza Normal: F<sub>N</sub> = 20 &middot; 9.81 &middot; cos(45&deg;) = 138.73 N<br>
+                    3. Fricción estática máx: F<sub>s,max</sub> = 0.50 &middot; 138.73 = 69.37 N (se opone al movimiento hacia arriba)<br>
+                    4. F<sub>necesaria</sub> = F<sub>g,&parallel;</sub> + F<sub>s,max</sub> = 138.73 + 69.37 = <strong>208.1 N</strong>
+                </div>
+            </div>
+
+            <!-- Reto 5 -->
+            <div class="reto-card">
+                <div class="reto-title"><i class="fa-solid fa-person-falling mr-2"></i>Reto 5: Deslizamiento Acelerado</div>
+                <p class="text-sm mb-3">Un objeto de <strong>5 kg</strong> se desliza libremente hacia abajo por una rampa de <strong>60&deg;</strong>. El coeficiente de fricción cinética &mu;<sub>k</sub> es <strong>0.20</strong>. Si no hay otras fuerzas externas aplicadas, ¿cuál es su aceleración cuesta abajo (m/s&sup2;)?</p>
+                <div class="flex items-center flex-wrap gap-y-2 mb-2">
+                    <input type="number" id="reto5-input" class="reto-input" step="0.01" placeholder="a (m/s²)">
+                    <button class="btn-check" onclick="checkReto(5, 7.51)">Verificar</button>
+                    <button class="btn-res" onclick="toggleRes(5)">Ver Resolución</button>
+                    <span id="reto5-fb" class="reto-feedback"></span>
+                </div>
+                <div id="reto5-res" class="reto-resolution view-hidden">
+                    1. Peso paralelo: F<sub>g,&parallel;</sub> = 5 &middot; 9.81 &middot; sin(60&deg;) = 42.48 N<br>
+                    2. Fuerza Normal: F<sub>N</sub> = 5 &middot; 9.81 &middot; cos(60&deg;) = 24.53 N<br>
+                    3. Fricción cinética: F<sub>k</sub> = &mu;<sub>k</sub> &middot; F<sub>N</sub> = 0.20 &middot; 24.53 = 4.91 N<br>
+                    4. Fuerza neta: &Sigma;F = F<sub>g,&parallel;</sub> - F<sub>k</sub> = 42.48 - 4.91 = 37.57 N<br>
+                    5. Aceleración: a = &Sigma;F / m = 37.57 / 5 = <strong>7.51 m/s&sup2;</strong>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- VISTA PRINCIPAL (Simulación / Gráficos) -->
+    <div id="view-sim" class="app-view view-hidden">
+        
+        <!-- Área Izquierda (Canvas y Gráfico) -->
+        <div class="sim-area">
+            
+            <!-- Lienzo de la Simulación Canvas -->
+            <div class="canvas-wrapper" id="canvas-container">
+                <canvas id="simCanvas" class="sim-canvas"></canvas>
+            </div>
+
+            <!-- Panel Inferior de Gráficos (Acceso mediante scroll en pestaña Gráficos) -->
+            <div id="graph-section" class="graph-section view-hidden">
+                <div class="graph-controls">
+                    <div class="font-bold text-gray-800 border-b pb-1 text-sm flex items-center justify-between">
+                        <span>Fuerzas Paralelas (N)</span>
+                        <i class="fa-solid fa-chart-line text-blue-600"></i>
+                    </div>
+                    
+                    <label class="flex items-center gap-2 text-orange-600 font-semibold cursor-pointer">
+                        <input type="checkbox" id="chk-g-fapp" checked>
+                        <span>F<sub>Aplicada</sub></span>
+                        <span class="ml-auto font-mono text-xs text-gray-700" id="val-g-fapp">0 N</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 text-red-600 font-semibold cursor-pointer">
+                        <input type="checkbox" id="chk-g-fric" checked>
+                        <span>F<sub>Fricción</sub></span>
+                        <span class="ml-auto font-mono text-xs text-gray-700" id="val-g-fric">0 N</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 text-blue-600 font-semibold cursor-pointer">
+                        <input type="checkbox" id="chk-g-fg" checked>
+                        <span>F<sub>Gravedad &parallel;</sub></span>
+                        <span class="ml-auto font-mono text-xs text-gray-700" id="val-g-fg">0 N</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 text-amber-800 font-semibold cursor-pointer">
+                        <input type="checkbox" id="chk-g-fwall" checked>
+                        <span>F<sub>Pared</sub></span>
+                        <span class="ml-auto font-mono text-xs text-gray-700" id="val-g-fwall">0 N</span>
+                    </label>
+
+                    <label class="flex items-center gap-2 text-emerald-600 font-bold border-t pt-1 cursor-pointer">
+                        <input type="checkbox" id="chk-g-fnet" checked>
+                        <span>F<sub>Suma (Neta)</sub></span>
+                        <span class="ml-auto font-mono text-xs text-gray-700" id="val-g-fnet">0 N</span>
+                    </label>
+
+                    <button id="btn-clear-chart" class="mt-auto bg-gray-200 border border-gray-300 rounded py-1 text-xs hover:bg-gray-300 transition">
+                        <i class="fa-solid fa-eraser mr-1"></i>Limpiar Gráfica
+                    </button>
+                </div>
+
+                <div class="graph-canvas-container">
+                    <canvas id="forceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Controles de Playback -->
+            <div class="playback-bar">
+                <button class="step-btn" id="btn-reset-time" title="Reiniciar tiempo">
+                    <i class="fa-solid fa-rotate-left"></i>
+                </button>
+                <button class="step-btn" id="btn-step-back" title="Paso Atrás">
+                    <i class="fa-solid fa-backward-step"></i>
+                </button>
+                <button class="play-btn" id="btn-play" title="Iniciar/Pausar">
+                    <i class="fa-solid fa-play"></i>
+                </button>
+                <button class="step-btn" id="btn-step-fwd" title="Paso Adelante">
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Panel Lateral Derecho (Parámetros) -->
+        <div class="right-panel">
+            
+            <!-- Visibilidad de Vectores -->
+            <div class="panel-box">
+                <div class="panel-title">Vectores de Fuerza</div>
+                <div class="panel-content space-y-1">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" id="chk-vectors" checked>
+                        <span>Mostrar Vectores de Fuerza</span>
+                    </label>
+                    <label class="flex items-center gap-2 text-emerald-700 font-bold">
+                        <input type="checkbox" id="chk-sum" checked>
+                        <span>Vector Suma de Fuerzas</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Controles Principales -->
+            <div class="panel-box">
+                <div class="panel-title">Parámetros Físicos</div>
+                <div class="panel-content space-y-3">
+                    
+                    <div class="control-row bg-orange-50 p-2 rounded border border-orange-200">
+                        <label>
+                            <span class="text-orange-700">Fuerza Aplicada:</span>
+                            <span class="val-badge" id="fapp-val">0 N</span>
+                        </label>
+                        <input type="range" id="fapp-slider" min="-2000" max="2000" step="10" value="0" class="accent-orange-500">
+                    </div>
+
+                    <div class="control-row">
+                        <label>
+                            <span>Posición Objeto:</span>
+                            <span class="val-badge" id="pos-val">-6.0 m</span>
+                        </label>
+                        <input type="range" id="pos-slider" min="-10" max="10" step="0.1" value="-6.0">
+                    </div>
+
+                    <div class="control-row">
+                        <label>
+                            <span>Ángulo Rampa:</span>
+                            <span class="val-badge" id="angle-val">30.0 °</span>
+                        </label>
+                        <input type="range" id="angle-slider" min="0" max="80" step="0.5" value="30.0">
+                    </div>
+
+                    <div class="control-row">
+                        <label>
+                            <span>Masa Objeto:</span>
+                            <span class="val-badge" id="mass-val">100 kg</span>
+                        </label>
+                        <input type="range" id="mass-slider" min="10" max="300" step="5" value="100">
+                    </div>
+
+                    <div class="control-row">
+                        <label>
+                            <span>Fricción Estática (&mu;<sub>s</sub>):</span>
+                            <span class="val-badge" id="mus-val">0.50</span>
+                        </label>
+                        <input type="range" id="mus-slider" min="0" max="1" step="0.02" value="0.50">
+                    </div>
+
+                    <div class="control-row">
+                        <label>
+                            <span>Fricción Cinética (&mu;<sub>k</sub>):</span>
+                            <span class="val-badge" id="muk-val">0.30</span>
+                        </label>
+                        <input type="range" id="muk-slider" min="0" max="1" step="0.02" value="0.30">
+                    </div>
+
+                    <button id="btn-reset-all" class="w-full mt-2 bg-slate-200 hover:bg-slate-300 border border-slate-400 text-slate-800 rounded py-1.5 text-xs font-bold transition">
+                        <i class="fa-solid fa-rotate mr-1"></i>Reiniciar Todo
+                    </button>
+                </div>
+            </div>
+
+            <!-- Panel Matemático en Vivo -->
+            <div class="panel-box">
+                <div class="panel-title">Desglose Físico en Vivo</div>
+                <div class="panel-content">
+                    <div class="math-dashboard" id="math-live">
+                        <!-- Generado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL SIMULADOR -->
+    <script>
+        // --- CONSTANTES Y ESTADO GLOBAL ---
+        const g = 9.81; // Aceleración de la gravedad (m/s2)
+        
+        let state = {
+            x: -6.0,          // Posición en metros (-10.0m a 10.0m)
+            v: 0.0,           // Velocidad (m/s)
+            a: 0.0,           // Aceleración (m/s2)
+            mass: 100,        // Masa (kg)
+            angleDeg: 30.0,   // Ángulo de la rampa (grados)
+            Fapp: 0,          // Fuerza aplicada externa (N)
+            mus: 0.50,        // Coeficiente fricción estática
+            muk: 0.30,        // Coeficiente fricción cinética
+            
+            isRunning: false,
+            lastTimestamp: 0,
+            timeElapsed: 0,
+            fWall: 0,
+            currentTab: 'intro'
+        };
+
+        // --- REFERENCIAS AL DOM ---
+        const simCanvas = document.getElementById('simCanvas');
+        const ctx = simCanvas.getContext('2d');
+        const canvasContainer = document.getElementById('canvas-container');
+
+        const viewIntro = document.getElementById('view-intro');
+        const viewSim = document.getElementById('view-sim');
+        const viewRetos = document.getElementById('view-retos');
+        const graphSection = document.getElementById('graph-section');
+
+        // Sliders & Badges
+        const sFapp = document.getElementById('fapp-slider'); const vFapp = document.getElementById('fapp-val');
+        const sPos = document.getElementById('pos-slider');   const vPos = document.getElementById('pos-val');
+        const sAngle = document.getElementById('angle-slider');const vAngle = document.getElementById('angle-val');
+        const sMass = document.getElementById('mass-slider'); const vMass = document.getElementById('mass-val');
+        const sMus = document.getElementById('mus-slider');   const vMus = document.getElementById('mus-val');
+        const sMuk = document.getElementById('muk-slider');   const vMuk = document.getElementById('muk-val');
+
+        // Checkboxes
+        const cVec = document.getElementById('chk-vectors');
+        const cSum = document.getElementById('chk-sum');
+        const chkGFapp = document.getElementById('chk-g-fapp');
+        const chkGFric = document.getElementById('chk-g-fric');
+        const chkGFg = document.getElementById('chk-g-fg');
+        const chkGFwall = document.getElementById('chk-g-fwall');
+        const chkGFnet = document.getElementById('chk-g-fnet');
+
+        // Val Badges Graficos
+        const valGFapp = document.getElementById('val-g-fapp');
+        const valGFric = document.getElementById('val-g-fric');
+        const valGFg = document.getElementById('val-g-fg');
+        const valGFwall = document.getElementById('val-g-fwall');
+        const valGFnet = document.getElementById('val-g-fnet');
+
+        // Botones
+        const btnPlay = document.getElementById('btn-play');
+        const btnStepFwd = document.getElementById('btn-step-fwd');
+        const btnStepBack = document.getElementById('btn-step-back');
+        const btnResetTime = document.getElementById('btn-reset-time');
+        const btnResetAll = document.getElementById('btn-reset-all');
+        const btnClearChart = document.getElementById('btn-clear-chart');
+        const mathLive = document.getElementById('math-live');
+
+        // --- SISTEMA DE PESTAÑAS ---
+        document.querySelectorAll('#main-tabs .phet-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('#main-tabs .phet-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                const targetTab = tab.getAttribute('data-tab');
+                state.currentTab = targetTab;
+
+                if (targetTab === 'intro') {
+                    viewIntro.classList.remove('view-hidden');
+                    viewSim.classList.add('view-hidden');
+                    viewRetos.classList.add('view-hidden');
+                } else if (targetTab === 'retos') {
+                    viewIntro.classList.add('view-hidden');
+                    viewSim.classList.add('view-hidden');
+                    viewRetos.classList.remove('view-hidden');
+                } else {
+                    viewIntro.classList.add('view-hidden');
+                    viewRetos.classList.add('view-hidden');
+                    viewSim.classList.remove('view-hidden');
+
+                    if (targetTab === 'friccion') {
+                        graphSection.classList.add('view-hidden');
+                    } else if (targetTab === 'graficos') {
+                        graphSection.classList.remove('view-hidden');
+                    }
+                    resizeCanvas();
+                }
+            });
+        });
+
+        // --- CONFIGURACIÓN DE CHART.JS ---
+        const chartCtx = document.getElementById('forceChart').getContext('2d');
+        const forceChart = new Chart(chartCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'F_Aplicada', borderColor: '#ea580c', data: [], fill: false, pointRadius: 0, tension: 0.1, borderWidth: 2 },
+                    { label: 'F_Friccion', borderColor: '#dc2626', data: [], fill: false, pointRadius: 0, tension: 0.1, borderWidth: 2 },
+                    { label: 'F_Gravedad', borderColor: '#2563eb', data: [], fill: false, pointRadius: 0, tension: 0.1, borderWidth: 2 },
+                    { label: 'F_Pared', borderColor: '#78350f', data: [], fill: false, pointRadius: 0, tension: 0.1, borderWidth: 2 },
+                    { label: 'F_Suma', borderColor: '#059669', data: [], fill: false, pointRadius: 0, tension: 0.1, borderWidth: 3 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { title: { display: true, text: 'Tiempo (s)' }, grid: { color: '#f1f5f9' } },
+                    y: { min: -2000, max: 2000, title: { display: true, text: 'Fuerza (N)' }, grid: { color: '#cbd5e1' } }
+                }
+            }
+        });
+
+        // --- MOTOR FÍSICO Y MATEMÁTICO ---
+        function computePhysics() {
+            // Determinar si está en tramo inclinado o plano
+            let isOnRamp = state.x >= 0;
+            let currentAngleRad = isOnRamp ? (state.angleDeg * Math.PI / 180) : 0;
+
+            // Descomposición del peso
+            let F_g_parallel = state.mass * g * Math.sin(currentAngleRad); // Dirección bajada de la rampa
+            let F_g_perp = state.mass * g * Math.cos(currentAngleRad);
+            let F_N = F_g_perp;
+
+            // Umbrales de rozamiento
+            let F_s_max = state.mus * F_N;
+            let F_k = state.muk * F_N;
+
+            // Fuerza impulsora externa e inclinación (sin contar rozamiento)
+            let F_drive = state.Fapp - F_g_parallel;
+
+            let f_fric = 0;
+            let isMoving = Math.abs(state.v) > 0.001;
+
+            if (!isMoving) {
+                // Caso Reposo: Fricción Estática
+                if (Math.abs(F_drive) <= F_s_max) {
+                    f_fric = -F_drive; // La fricción compensa exactamente el empuje
+                    state.a = 0;
+                } else {
+                    // Supera el umbral estático -> Comienza movimiento con fricción cinética
+                    f_fric = -Math.sign(F_drive) * F_k;
+                    state.a = (F_drive + f_fric) / state.mass;
+                }
+            } else {
+                // Caso Movimiento: Fricción Cinética
+                f_fric = -Math.sign(state.v) * F_k;
+                state.a = (F_drive + f_fric) / state.mass;
+            }
+
+            let F_net = F_drive + f_fric;
+
+            // Manejo de Paredes Extremas
+            state.fWall = 0;
+            if (state.x <= -10.0 && state.a < 0) {
+                state.x = -10.0; state.v = 0; state.a = 0;
+                state.fWall = -F_net; F_net = 0;
+            } else if (state.x >= 10.0 && state.a > 0) {
+                state.x = 10.0; state.v = 0; state.a = 0;
+                state.fWall = -F_net; F_net = 0;
+            }
+
+            return {
+                isOnRamp,
+                currentAngleRad,
+                F_g_parallel,
+                F_N,
+                F_s_max,
+                F_k,
+                f_fric,
+                F_net,
+                F_drive
+            };
+        }
+
+        // --- RENDERIZADO VISUAL DEL SCENARIO Y REGLAS ---
+        function renderScene() {
+            const w = simCanvas.width;
+            const h = simCanvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            // Coordenadas del origen (0.0 m, intersección de rampa y plano)
+            const originX = w * 0.45;
+            const originY = h * 0.70;
+            const metersToPixels = w / 26; // Escala visual
+
+            const angleRad = state.angleDeg * Math.PI / 180;
+            const rampPixelLength = 10 * metersToPixels;
+
+            const rampEndX = originX + rampPixelLength * Math.cos(angleRad);
+            const rampEndY = originY - rampPixelLength * Math.sin(angleRad);
+
+            // 1. DIBUJAR SUELO HORIZONTAL Y RAMPA
+            ctx.fillStyle = '#b45f06';
+            
+            // Cuerpo del suelo plano
+            ctx.fillRect(0, originY, originX, h - originY);
+            
+            // Cuerpo de la rampa inclinada
+            ctx.beginPath();
+            ctx.moveTo(originX, originY);
+            ctx.lineTo(rampEndX, rampEndY);
+            ctx.lineTo(rampEndX, h);
+            ctx.lineTo(originX, h);
+            ctx.fill();
+
+            // Línea de superficie superior ( Madera / Terreno )
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#78350f';
+            ctx.beginPath();
+            ctx.moveTo(0, originY);
+            ctx.lineTo(originX, originY);
+            ctx.lineTo(rampEndX, rampEndY);
+            ctx.stroke();
+
+            // 2. DIBUJAR REGLAS Y GRADUACIONES DE DISTANCIA
+            drawHorizontalRuler(ctx, originX, originY, metersToPixels);
+            drawRampRuler(ctx, originX, originY, rampPixelLength, angleRad, metersToPixels);
+
+            // 3. DIBUJAR PAREDES EXTREMAS (Ladrillo)
+            drawBrickWall(ctx, originX - 10 * metersToPixels - 15, originY - 60, 15, 60);
+            drawBrickWall(ctx, rampEndX, rampEndY - 60, 15, 60);
+
+            // 4. POSICIÓN Y RENDER DEL CAJÓN/OBJETO
+            let boxX, boxY, boxRotation;
+            if (state.x < 0) {
+                boxX = originX + state.x * metersToPixels;
+                boxY = originY;
+                boxRotation = 0;
+            } else {
+                boxX = originX + (state.x * metersToPixels) * Math.cos(angleRad);
+                boxY = originY - (state.x * metersToPixels) * Math.sin(angleRad);
+                boxRotation = -angleRad;
+            }
+
+            ctx.save();
+            ctx.translate(boxX, boxY);
+            ctx.rotate(boxRotation);
+
+            // Sombra objeto
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.fillRect(-22, -2, 44, 4);
+
+            // Cajón de madera
+            ctx.fillStyle = '#d97706';
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 2;
+            ctx.fillRect(-20, -40, 40, 40);
+            ctx.strokeRect(-20, -40, 40, 40);
+
+            // Cruz decorativa en el cajón
+            ctx.beginPath();
+            ctx.moveTo(-20, -40); ctx.lineTo(20, 0);
+            ctx.moveTo(20, -40); ctx.lineTo(-20, 0);
+            ctx.stroke();
+
+            // 5. VECTORES DE FUERZA
+            const p = computePhysics();
+
+            if (cVec.checked) {
+                // Vector Normal F_N
+                if (p.F_N > 0) drawVector(ctx, 0, -20, 0, -p.F_N * 0.06, '#eab308', 'F_N');
+
+                // Fuerza Aplicada
+                if (Math.abs(state.Fapp) > 0) drawVector(ctx, 0, -20, state.Fapp * 0.06, 0, '#f97316', 'F_App');
+
+                // Fuerza de Fricción
+                if (Math.abs(p.f_fric) > 0) drawVector(ctx, 0, -20, p.f_fric * 0.06, 0, '#ef4444', 'f_r');
+
+                // Peso Gravedad F_g (Siempre apunta hacia abajo verticalmente en el mundo)
+                ctx.save();
+                ctx.rotate(-boxRotation);
+                drawVector(ctx, 0, 0, 0, state.mass * g * 0.06, '#2563eb', 'F_g');
+                ctx.restore();
+
+                // Vector Suma (Neta)
+                if (cSum.checked && Math.abs(p.F_net) > 0) {
+                    drawVector(ctx, 0, -55, p.F_net * 0.06, 0, '#10b981', 'F_Suma');
+                }
+            }
+
+            ctx.restore();
+        }
+
+        // Dibuja regla graduada horizontal
+        function drawHorizontalRuler(ctx, originX, originY, scale) {
+            ctx.save();
+            ctx.strokeStyle = '#ffffff';
+            ctx.fillStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.font = 'bold 11px sans-serif';
+
+            for (let m = 0; m >= -10; m -= 2) {
+                let rx = originX + m * scale;
+                ctx.beginPath();
+                ctx.moveTo(rx, originY);
+                ctx.lineTo(rx, originY + 12);
+                ctx.stroke();
+                ctx.fillText(`${m}`, rx - 6, originY + 26);
+            }
+            ctx.fillText("metros", originX - 5 * scale, originY + 40);
+            ctx.restore();
+        }
+
+        // Dibuja regla graduada sobre la rampa
+        function drawRampRuler(ctx, originX, originY, rampLength, angleRad, scale) {
+            ctx.save();
+            ctx.translate(originX, originY);
+            ctx.rotate(-angleRad);
+
+            ctx.strokeStyle = '#ffffff';
+            ctx.fillStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.font = 'bold 11px sans-serif';
+
+            for (let m = 0; m <= 10; m += 2) {
+                let rx = m * scale;
+                ctx.beginPath();
+                ctx.moveTo(rx, 0);
+                ctx.lineTo(rx, 12);
+                ctx.stroke();
+
+                ctx.save();
+                ctx.scale(1, -1);
+                ctx.fillText(`${m}`, rx - 4, -16);
+                ctx.restore();
+            }
+            ctx.restore();
+        }
+
+        // Dibuja muros de ladrillo
+        function drawBrickWall(ctx, x, y, w, h) {
+            ctx.fillStyle = '#b91c1c';
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, w, h);
+        }
+
+        // Dibuja flechas/vectores con etiquetas
+        function drawVector(ctx, x, y, dx, dy, color, label) {
+            if (Math.abs(dx) < 2 && Math.abs(dy) < 2) return;
+
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = 4;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + dx, y + dy);
+            ctx.stroke();
+
+            // Cabeza de la flecha
+            let headAngle = Math.atan2(dy, dx);
+            ctx.beginPath();
+            ctx.moveTo(x + dx, y + dy);
+            ctx.lineTo(x + dx - 12 * Math.cos(headAngle - Math.PI / 6), y + dy - 12 * Math.sin(headAngle - Math.PI / 6));
+            ctx.lineTo(x + dx - 12 * Math.cos(headAngle + Math.PI / 6), y + dy - 12 * Math.sin(headAngle + Math.PI / 6));
+            ctx.fill();
+
+            // Etiqueta del vector
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText(label, x + dx + 6, y + dy - 6);
+
+            ctx.restore();
+        }
+
+        // Actualiza el UI numérico y el tablero matemático
+        function updateUIControls(p) {
+            vFapp.innerText = `${state.Fapp} N`;
+            vPos.innerText = `${state.x.toFixed(1)} m`;
+            vAngle.innerText = `${state.angleDeg.toFixed(1)} °`;
+            vMass.innerText = `${state.mass} kg`;
+            vMus.innerText = state.mus.toFixed(2);
+            vMuk.innerText = state.muk.toFixed(2);
+
+            let isStaticOvercome = Math.abs(p.F_drive) > p.F_s_max && state.v === 0;
+            let statusText = isStaticOvercome ? 
+                '<span class="highlight-alert">¡ROMPIMIENTO DE FRICCIÓN ESTÁTICA!</span>' : 
+                (state.v !== 0 ? '<span class="highlight-ok">MOVIMIENTO CINÉTICO</span>' : '<span>REPOSO ESTÁTICO</span>');
+
+            mathLive.innerHTML = `
+                <div>ESTADO: ${statusText}</div>
+                <div>F_Normal = ${p.F_N.toFixed(1)} N</div>
+                <div>F_s(máx) = ${p.F_s_max.toFixed(1)} N | F_k = ${p.F_k.toFixed(1)} N</div>
+                <div>F_Fricción = ${Math.abs(p.f_fric).toFixed(1)} N</div>
+                <div>F_Neta = ${p.F_net.toFixed(1)} N</div>
+                <div>Aceleración = ${state.a.toFixed(2)} m/s²</div>
+                <div>Velocidad = ${state.v.toFixed(2)} m/s</div>
+            `;
+
+            valGFapp.innerText = `${state.Fapp.toFixed(0)} N`;
+            valGFric.innerText = `${Math.abs(p.f_fric).toFixed(1)} N`;
+            valGFg.innerText = `${p.F_g_parallel.toFixed(1)} N`;
+            valGFwall.innerText = `${state.fWall.toFixed(1)} N`;
+            valGFnet.innerText = `${p.F_net.toFixed(1)} N`;
+        }
+
+        // Bucle Principal de la Simulación
+        function loop(timestamp) {
+            if (!state.lastTimestamp) state.lastTimestamp = timestamp;
+            let dt = (timestamp - state.lastTimestamp) / 1000;
+            state.lastTimestamp = timestamp;
+
+            if (dt > 0.1) dt = 0.1; // Limitar dt para evitar saltos drásticos
+
+            if (state.isRunning) {
+                let p = computePhysics();
+
+                state.v += state.a * dt;
+                state.x += state.v * dt;
+                state.timeElapsed += dt;
+
+                // Actualizar slider de posición mientras corre
+                sPos.value = state.x;
+
+                // Actualización de Chart.js si la pestaña activa es Gráficos
+                if (state.currentTab === 'graficos' && forceChart) {
+                    forceChart.data.labels.push(state.timeElapsed.toFixed(1));
+                    forceChart.data.datasets[0].data.push(chkGFapp.checked ? state.Fapp : null);
+                    forceChart.data.datasets[1].data.push(chkGFric.checked ? Math.abs(p.f_fric) : null);
+                    forceChart.data.datasets[2].data.push(chkGFg.checked ? -p.F_g_parallel : null);
+                    forceChart.data.datasets[3].data.push(chkGFwall.checked ? state.fWall : null);
+                    forceChart.data.datasets[4].data.push(chkGFnet.checked ? p.F_net : null);
+
+                    if (forceChart.data.labels.length > 80) {
+                        forceChart.data.labels.shift();
+                        forceChart.data.datasets.forEach(d => d.data.shift());
+                    }
+                    forceChart.update();
+                }
+            }
+
+            let currentPhysics = computePhysics();
+            updateUIControls(currentPhysics);
+            renderScene();
+
+            requestAnimationFrame(loop);
+        }
+
+        // Redimensionado del Canvas según el contenedor
+        function resizeCanvas() {
+            if (canvasContainer) {
+                simCanvas.width = canvasContainer.clientWidth;
+                simCanvas.height = canvasContainer.clientHeight;
+                renderScene();
+            }
+        }
+
+        // --- EVENTOS Y CONTROLES ---
+        sFapp.oninput = (e) => { state.Fapp = parseFloat(e.target.value); };
+        sPos.oninput = (e) => { state.x = parseFloat(e.target.value); state.v = 0; state.a = 0; };
+        sAngle.oninput = (e) => { state.angleDeg = parseFloat(e.target.value); };
+        sMass.oninput = (e) => { state.mass = parseFloat(e.target.value); };
+        sMus.oninput = (e) => { state.mus = parseFloat(e.target.value); };
+        sMuk.oninput = (e) => { state.muk = parseFloat(e.target.value); };
+
+        btnPlay.onclick = () => {
+            state.isRunning = !state.isRunning;
+            btnPlay.innerHTML = state.isRunning ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
+            if (state.isRunning) btnPlay.classList.add('paused');
+            else btnPlay.classList.remove('paused');
+        };
+
+        btnStepFwd.onclick = () => {
+            state.isRunning = false;
+            btnPlay.classList.remove('paused');
+            btnPlay.innerHTML = '<i class="fa-solid fa-play"></i>';
+            
+            let dt = 0.05;
+            let p = computePhysics();
+            state.v += state.a * dt;
+            state.x += state.v * dt;
+            sPos.value = state.x;
+        };
+
+        btnStepBack.onclick = () => {
+            state.isRunning = false;
+            btnPlay.classList.remove('paused');
+            btnPlay.innerHTML = '<i class="fa-solid fa-play"></i>';
+            state.v = 0;
+            state.a = 0;
+        };
+
+        btnResetTime.onclick = () => {
+            state.timeElapsed = 0;
+            if (forceChart) {
+                forceChart.data.labels = [];
+                forceChart.data.datasets.forEach(d => d.data = []);
+                forceChart.update();
+            }
+        };
+
+        btnResetAll.onclick = () => {
+            state.isRunning = false;
+            state.x = -6.0; state.v = 0; state.a = 0; state.Fapp = 0;
+            state.angleDeg = 30.0; state.mass = 100; state.mus = 0.50; state.muk = 0.30;
+            state.timeElapsed = 0;
+
+            sFapp.value = 0; sPos.value = -6.0; sAngle.value = 30.0;
+            sMass.value = 100; sMus.value = 0.50; sMuk.value = 0.30;
+
+            btnPlay.innerHTML = '<i class="fa-solid fa-play"></i>';
+            btnPlay.classList.remove('paused');
+
+            if (forceChart) {
+                forceChart.data.labels = [];
+                forceChart.data.datasets.forEach(d => d.data = []);
+                forceChart.update();
+            }
+        };
+
+        btnClearChart.onclick = () => {
+            if (forceChart) {
+                forceChart.data.labels = [];
+                forceChart.data.datasets.forEach(d => d.data = []);
+                forceChart.update();
+            }
+        };
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // --- FUNCIONES PARA PESTAÑA RETOS ---
+        window.checkReto = function(id, correctAnswer) {
+            const inputVal = parseFloat(document.getElementById(`reto${id}-input`).value);
+            const feedbackElem = document.getElementById(`reto${id}-fb`);
+            
+            if (isNaN(inputVal)) {
+                feedbackElem.textContent = 'Ingresa un valor numérico.';
+                feedbackElem.className = 'reto-feedback feedback-err';
+                return;
+            }
+            
+            // Margen de error de +/- 0.12 para acomodar redondeos a 1 o 2 decimales
+            if (Math.abs(inputVal - correctAnswer) <= 0.12) {
+                feedbackElem.innerHTML = '<i class="fa-solid fa-circle-check"></i> ¡Correcto!';
+                feedbackElem.className = 'reto-feedback feedback-ok';
+            } else {
+                feedbackElem.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Incorrecto, intenta de nuevo.';
+                feedbackElem.className = 'reto-feedback feedback-err';
+            }
+        };
+
+        window.toggleRes = function(id) {
+            const resElem = document.getElementById(`reto${id}-res`);
+            if (resElem.classList.contains('view-hidden')) {
+                resElem.classList.remove('view-hidden');
+            } else {
+                resElem.classList.add('view-hidden');
+            }
+        };
+
+        // Inicialización
+        resizeCanvas();
+        requestAnimationFrame(loop);
+
+    </script>
+</body>
+</html>
